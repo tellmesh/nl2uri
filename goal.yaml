@@ -1,0 +1,25 @@
+version: '1.0'
+project:
+  name: nl2uri
+  type: [python]
+  description: 'nl2uri — TellMesh URI package'
+versioning:
+  strategy: semver
+  files: [pyproject.toml:version]
+git:
+  commit:
+    strategy: conventional
+    scope: nl2uri
+  tag:
+    enabled: true
+    prefix: v
+strategies:
+  python:
+    test: pytest tests/ -q
+    build: python -m build
+    publish: twine upload dist/nl2uri-{version}*
+    publish_enabled: true
+registries:
+  pypi:
+    url: https://pypi.org/simple/
+    token_env: PYPI_TOKEN

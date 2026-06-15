@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nl2uri"
+version = "0.5.6"
+description = "Natural language to URI Tree planning and nl2a pipeline CLI"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+dependencies = [
+    "uri3",
+    "resource-agent-hypervisor",
+    "resource-agent-factory",
+    "httpx>=0.27",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0",
+    "typer>=0.26.7",
+]
+
+[project.scripts]
+nl2uri = "nl2uri.cli:main"
+nl2a = "nl2a.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nl2uri*", "nl2a*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.uv.sources]
+uri3 = { git = "https://github.com/tellmesh/uri3.git" }
+resource-agent-hypervisor = { git = "https://github.com/wronai/hypervisor.git", subdirectory = "packages/resource-agent-hypervisor" }
+resource-agent-factory = { git = "https://github.com/wronai/hypervisor.git", subdirectory = "packages/resource-agent-factory" }
