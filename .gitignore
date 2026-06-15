@@ -1,3 +1,4 @@
+.env.example
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -11,3 +12,6 @@ build/
 .coverage
 htmlcov/
 .DS_Store
+
+# Environment variables
+.env
