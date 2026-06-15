@@ -10,6 +10,7 @@ requires-python = ">=3.10"
 license = "Apache-2.0"
 dependencies = [
     "uri3",
+    "uri2flow",
     "resource-agent-hypervisor",
     "resource-agent-factory",
     "httpx>=0.27",
@@ -31,7 +32,10 @@ testpaths = ["tests"]
 pythonpath = ["."]
 
 [tool.uv.sources]
-uri3 = { git = "https://github.com/tellmesh/uri3.git" }
+uri3 = { path = "../uri3", editable = true }
+uri2flow = { path = "../uri2flow", editable = true }
+resource-agent-hypervisor = { path = "../resource-agent-hypervisor", editable = true }
+resource-agent-factory = { path = "../resource-agent-factory", editable = true }
 
 [tool.pfix]
 # Self-healing Python configuration

@@ -13,6 +13,7 @@ from generator.validate import validate_agent
 from generator.verify import verify_generated_agent
 from hypervisor.deployment_registry import get_deployment_for_agent, load_deployment_registry
 from nl2a.cli import app
+from nl2uri.domain_registry import repo_root as registry_root
 from nl2uri.pipeline import WEATHER_PROMPT, run_full_pipeline
 
 
@@ -29,10 +30,10 @@ def isolated_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     ):
         (tmp_path / relative).mkdir(parents=True, exist_ok=True)
 
-    repo_root = Path(__file__).resolve().parents[2]
-    shutil.copytree(repo_root / "schemas", tmp_path / "schemas")
-    shutil.copy(repo_root / "contracts" / "registry.yaml", tmp_path / "contracts" / "registry.yaml")
-    policy_src = repo_root / "contracts" / "compatibility" / "policy.yaml"
+    source_root = registry_root()
+    shutil.copytree(source_root / "schemas", tmp_path / "schemas")
+    shutil.copy(source_root / "contracts" / "registry.yaml", tmp_path / "contracts" / "registry.yaml")
+    policy_src = source_root / "contracts" / "compatibility" / "policy.yaml"
     if policy_src.exists():
         shutil.copy(policy_src, tmp_path / "contracts" / "compatibility" / "policy.yaml")
 

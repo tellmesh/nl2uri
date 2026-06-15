@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import yaml
 
@@ -15,8 +17,54 @@ Matcher = Callable[[str], bool]
 Planner = Callable[[str], dict[str, Any]]
 
 
+def _candidate_roots() -> list[Path]:
+    candidates: list[Path] = []
+
+    def add(path: Path) -> None:
+        resolved = path.expanduser().resolve()
+        if resolved not in candidates:
+            candidates.append(resolved)
+
+    cwd = Path.cwd()
+    module_root = Path(__file__).resolve().parents[1]
+
+    add(cwd)
+    if raw := os.getenv("HYPERVISOR_REPO_ROOT"):
+        add(Path(raw))
+    for base in (cwd, module_root, *module_root.parents):
+        add(base / "hypervisor")
+        add(base / "wronai" / "hypervisor")
+    try:
+        from uri3.config.repo_root import find_repo_root
+
+        add(find_repo_root(strict=False))
+    except Exception:
+        pass
+    add(module_root)
+    return candidates
+
+
 def repo_root() -> Path:
-    return Path(__file__).resolve().parents[3]
+    domain_roots = [candidate for candidate in _candidate_roots() if (candidate / "domains").is_dir()]
+    for candidate in domain_roots:
+        if (candidate / "contracts" / "registry.yaml").is_file():
+            return candidate
+    if domain_roots:
+        return domain_roots[0]
+    return Path(__file__).resolve().parents[1]
+
+
+def _registry_roots() -> list[Path]:
+    roots: list[Path] = []
+
+    def add(path: Path) -> None:
+        resolved = path.resolve()
+        if resolved not in roots and (resolved / "domains").is_dir():
+            roots.append(resolved)
+
+    for candidate in _candidate_roots():
+        add(candidate)
+    return roots
 
 
 @dataclass(frozen=True)
@@ -50,7 +98,9 @@ class DomainRegistryEntry:
     @property
     def deployment_selector_aliases(self) -> dict[str, str]:
         block = self.fragment.get("deployment_selector_aliases") or {}
-        return {str(key): str(value) for key, value in block.items()} if isinstance(block, dict) else {}
+        if not isinstance(block, dict):
+            return {}
+        return {str(key): str(value) for key, value in block.items()}
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
@@ -83,29 +133,37 @@ def _load_planner_module(planner_path: Path) -> Any:
 
 @lru_cache(maxsize=1)
 def load_domain_registry() -> tuple[DomainRegistryEntry, ...]:
-    root = repo_root()
     entries: list[DomainRegistryEntry] = []
-    for planner_path in sorted((root / "domains").glob("*/planner.py")):
-        module = _load_planner_module(planner_path)
-        matcher = getattr(module, "match_prompt", None) or _find_callable(module, prefix="is_", suffix="_prompt")
-        planner_fn = getattr(module, "deterministic_plan", None) or _find_callable(
-            module,
-            prefix="deterministic_",
-            suffix="_plan",
-        )
-        if matcher is None or planner_fn is None:
-            continue
-        fragment = _read_yaml(planner_path.parent / "registry.fragment.yaml")
-        domain_id = str(fragment.get("domain_id") or planner_path.parent.name)
-        entries.append(
-            DomainRegistryEntry(
-                domain_dir=planner_path.parent.name,
-                domain_id=domain_id,
-                match_prompt=matcher,
-                deterministic_plan=planner_fn,
-                fragment=fragment,
+    seen: set[str] = set()
+    for root in _registry_roots():
+        for planner_path in sorted((root / "domains").glob("*/planner.py")):
+            if planner_path.parent.name in seen:
+                continue
+            module = _load_planner_module(planner_path)
+            matcher = getattr(module, "match_prompt", None) or _find_callable(
+                module,
+                prefix="is_",
+                suffix="_prompt",
             )
-        )
+            planner_fn = getattr(module, "deterministic_plan", None) or _find_callable(
+                module,
+                prefix="deterministic_",
+                suffix="_plan",
+            )
+            if matcher is None or planner_fn is None:
+                continue
+            fragment = _read_yaml(planner_path.parent / "registry.fragment.yaml")
+            domain_id = str(fragment.get("domain_id") or planner_path.parent.name)
+            entries.append(
+                DomainRegistryEntry(
+                    domain_dir=planner_path.parent.name,
+                    domain_id=domain_id,
+                    match_prompt=matcher,
+                    deterministic_plan=planner_fn,
+                    fragment=fragment,
+                )
+            )
+            seen.add(planner_path.parent.name)
     return tuple(entries)
 
 

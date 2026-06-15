@@ -9,8 +9,15 @@ from nl2uri.weather_forecast import (
     plan_weather_forecast,
     weather_forecast_uri,
 )
-from urish.backends.ask import ask_prompt
-from urish.intent import detect_intent
+
+try:
+    from urish.backends.ask import ask_prompt
+    from urish.intent import detect_intent
+except ModuleNotFoundError as exc:
+    if exc.name != "urish":
+        raise
+    ask_prompt = None
+    detect_intent = None
 
 
 @pytest.mark.parametrize(
@@ -38,6 +45,8 @@ def test_extract_weather_place_and_days():
 
 
 def test_detect_weather_intent():
+    if detect_intent is None:
+        pytest.skip("urish is not installed")
     intent = detect_intent("prognoza pogody Gdańsk 7 dni")
     assert intent["kind"] == "weather"
     assert intent["subtype"] == "forecast_html"
@@ -45,6 +54,8 @@ def test_detect_weather_intent():
 
 
 def test_ask_weather_forecast_plans_executable_uri():
+    if ask_prompt is None:
+        pytest.skip("urish is not installed")
     result = ask_prompt("prognoza pogody Gdańsk 7 dni")
     data = result["data"]
     assert data["detected_kind"] == "weather"
