@@ -1,5 +1,5 @@
 # goal.yaml - Goal configuration file
-# Generated: 2026-06-15 18:08:15
+# Generated: 2026-06-15 23:09:10
 # Documentation: https://github.com/wronai/goal#configuration
 #
 # This file configures Goal's behavior for:
@@ -20,8 +20,9 @@ project:
 versioning:
   strategy: semver
   files:
+  - VERSION
   - pyproject.toml:version
-  - .venv/lib/python3.13/site-packages/httpcore/__init__.py:__version__
+  - .venv/lib/python3.13/site-packages/mistune/__init__.py:__version__
   bump_rules:
     patch: 10
     minor: 50
@@ -221,7 +222,8 @@ git:
     format: '{prefix}{version}'
 strategies:
   python:
-    test: env HYPERVISOR_REPO_ROOT=/home/tom/github/tellmesh/tellmesh uv run --extra dev pytest tests/ -q
+    test: env HYPERVISOR_REPO_ROOT=/home/tom/github/tellmesh/tellmesh uv run --extra
+      dev pytest tests/ -q
     build: python -m build
     publish: twine upload dist/nl2uri-{version}*
     publish_enabled: true
