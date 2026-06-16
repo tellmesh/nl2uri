@@ -13,7 +13,7 @@ Generated on 2026-06-15 using [openrouter/qwen/qwen3-coder-next](https://openrou
 
 ---
 
-TellMesh URI package extracted from [wronai/hypervisor](https://github.com/tellmesh/tellmesh).
+TellMesh URI package extracted from [tellmesh/tellmesh](https://github.com/tellmesh/tellmesh).
 
 
 ## License
